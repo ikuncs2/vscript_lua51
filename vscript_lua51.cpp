@@ -43,10 +43,24 @@ LUA_API int (lua_isuserdata)(lua_State* L, int idx)
 	return lua_type(L, idx) == LUA_TLIGHTUSERDATA || lua_type(L, idx) == LUA_TUSERDATA;
 }
 
+void* index2adr(lua_State* L, int idx) {
+	auto f = (void* (*)(lua_State* L, int idx))FindFunction(0x54f00);
+	return f(L, idx);
+}
+
 LUA_API int (lua_rawequal)(lua_State* L, int idx1, int idx2)
 {
-	// TODO : not yet implemented
-	abort();
+	void* ptr1 = index2adr(L, idx1);
+	void* ptr2 = index2adr(L, idx2);
+
+	BYTE* gState = *(BYTE**)((BYTE*)L + 0x10);
+	void* luaNull = (void*)(gState + 0xf8);
+
+	if (ptr1 != luaNull && ptr2 != luaNull) {
+		auto lj_obj_equal = (int(*)(void* a, void* b))FindFunction(0x6abd0);
+		return lj_obj_equal(ptr1, ptr2);
+	}
+	return false;
 }
 
 LUA_API lua_CFunction(lua_tocfunction) (lua_State* L, int idx)
@@ -104,8 +118,11 @@ LUA_API int  (lua_status)(lua_State* L)
 
 LUA_API lua_Alloc(lua_getallocf) (lua_State* L, void** ud)
 {
-	// TODO : not yet implemented
-	abort();
+  	BYTE* gState = *(BYTE**)((BYTE*)L + 0x10);
+	if (ud != nullptr) {
+    		*ud = *(void**)(gState + 0x18);
+	}
+  	return *(lua_Alloc*)(gState + 0x10);
 }
 
 LUA_API void lua_setallocf(lua_State* L, lua_Alloc f, void* ud)
