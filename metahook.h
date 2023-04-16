@@ -10,24 +10,23 @@ inline PVOID MH_GetModuleBase(HMODULE hModule)
 	return (PVOID)mem.AllocationBase;
 }
 
-inline DWORD MH_GetModuleSize(HMODULE hModule)
+inline LONG_PTR MH_GetModuleSize(HMODULE hModule)
 {
 	return ((IMAGE_NT_HEADERS*)((LONG_PTR)hModule + ((IMAGE_DOS_HEADER*)hModule)->e_lfanew))->OptionalHeader.SizeOfImage;
 }
 
-inline void* MH_SearchPattern(void* pStartSearch, DWORD dwSearchLen, const char* pPattern, DWORD dwPatternLen)
+inline void* MH_SearchPattern(void* pStartSearch, LONG_PTR dwSearchLen, const char* pPattern, LONG_PTR dwPatternLen)
 {
-	LONG_PTR dwStartAddr = (LONG_PTR)pStartSearch;
-	LONG_PTR dwEndAddr = dwStartAddr + dwSearchLen - dwPatternLen;
+	BYTE *dwStartAddr = (BYTE *)pStartSearch;
+	BYTE *dwEndAddr = dwStartAddr + dwSearchLen - dwPatternLen;
 
 	while (dwStartAddr < dwEndAddr)
 	{
 		bool found = true;
 
-		for (DWORD i = 0; i < dwPatternLen; i++)
+		for (LONG_PTR i = 0; i < dwPatternLen; i++)
 		{
-			char code = *(char*)(dwStartAddr + i);
-			if (pPattern[i] != 0x2A && pPattern[i] != code)
+			if ((BYTE)pPattern[i] != 0x2A && (BYTE)pPattern[i] != dwStartAddr[i])
 			{
 				found = false;
 				break;
@@ -35,7 +34,7 @@ inline void* MH_SearchPattern(void* pStartSearch, DWORD dwSearchLen, const char*
 		}
 
 		if (found)
-			return (void*)dwStartAddr;
+			return dwStartAddr;
 
 		dwStartAddr++;
 	}
