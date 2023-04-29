@@ -69,6 +69,16 @@ void lj_err_run(lua_State* L);
 void lj_err_argtype(lua_State* L, int narg, const char* xname);
 static void err_argmsg(lua_State* L, int narg, const char* msg);
 
+// take back luajit functions
+extern "C" {
+	LUALIB_API int luaopen_bit(lua_State* L);
+	//LUALIB_API int luaopen_jit(lua_State* L);
+	LUALIB_API int luaopen_ffi(lua_State* L);
+	LUALIB_API int luaopen_string_buffer(lua_State* L);
+
+	LUA_API int luaJIT_setmode(lua_State* L, int idx, int mode);
+}
+
 // implementation for default functions
 
 LUA_API void (lua_replace)(lua_State* L, int idx) 
@@ -97,10 +107,22 @@ LUA_API int (lua_rawequal)(lua_State* L, int idx1, int idx2)
 	return false;
 }
 
+#define LJ_TFUNC		(~8u)
+#define itype(o)	((uint32_t)(*(int64_t *)(o) >> 47))
+#define tvisfunc(o)	(itype(o) == LJ_TFUNC)
+#define LJ_GCVMASK 0x7FFFFFFFFFFFULL
+
 LUA_API lua_CFunction(lua_tocfunction) (lua_State* L, int idx)
 {
-	// TODO : not yet implemented
-	abort();
+	TValue* o = index2adr(L, idx);
+	uintptr_t gcptr = (*(int64_t *)o & LJ_GCVMASK);
+
+	if (tvisfunc(o)) {
+		BYTE op = **(BYTE**)(gcptr + 32);
+		if (op == 95 || op == 96)
+			return (lua_CFunction)(gcptr + 40);
+	}
+	return nullptr;
 }
 
 LUA_API lua_State* (lua_tothread)(lua_State* L, int idx)
@@ -226,6 +248,11 @@ LUALIB_API int (luaL_loadbuffer)(lua_State* L, const char* buff, size_t sz, cons
 LUALIB_API int (luaopen_os)(lua_State* L) // not found
 {
 	return luaL_error(L, "luaopen_os : not yet implemented");
+}
+
+LUALIB_API int (luaopen_jit)(lua_State* L) // not found
+{
+	return luaL_error(L, "luaopen_jit : not yet implemented");
 }
 
 LUALIB_API void (luaL_openlibs)(lua_State* L) // inlined

@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 17)
-add_library(lua51 SHARED vscript_lua51.cpp)
+add_library(lua5.1 SHARED vscript_lua51.cpp)
 
 add_library(vscript SHARED vscript_patch.cpp)
-target_link_libraries(vscript PUBLIC lua51)
+target_link_libraries(vscript PUBLIC lua5.1)
+
+add_library(luametahook SHARED luametahook.cpp)
+target_link_libraries(luametahook PUBLIC lua5.1)
+
+add_library(cio SHARED liolib.c)
+target_compile_definitions(cio PRIVATE -DLUA_BUILD_AS_DLL -DLUA_LIB)
+target_link_libraries(cio PUBLIC lua5.1)

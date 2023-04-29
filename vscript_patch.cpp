@@ -9,6 +9,10 @@ extern "C" {
 #include "lauxlib.h"
 }
 
+extern "C" {
+    LUALIB_API int luaopen_ffi(lua_State* L);
+    LUA_API int luaJIT_setmode(lua_State* L, int idx, int mode);
+}
 
 typedef void* (*CreateInterfaceFn)(const char *pName, int *pReturnCode);
 
@@ -182,6 +186,12 @@ public:
         
         lua_State *L = (lua_State *)vm2->GetInternalVM();
 
+        // moemod : turn on jit again
+#define LUAJIT_MODE_OFF		0x0000	/* Turn feature off. */
+#define LUAJIT_MODE_ON		0x0100	/* Turn feature on. */
+#define LUAJIT_MODE_FLUSH	0x0200	/* Flush JIT-compiled code. */
+        luaJIT_setmode(L, 0, LUAJIT_MODE_ON);
+
         lua_getglobal(L, "print"); // #1
         lua_pushstring(L, "vscript patch: hello, world !!!"); // #2
         lua_call(L, 1, 0); // #0
@@ -214,7 +224,19 @@ public:
         lua_call(L, 3, 0); // #0
 
         luaL_unref(L, LUA_REGISTRYINDEX, valve_loader_ref);
+
+        // moemod hack : restore io
+        // not working, use local io = require("cio")
+        //lua_pushcfunction(L, luaopen_io);
+        //lua_pushstring(L, "io");
+        //lua_pcall(L, 1, 0, 0);
         
+        // moemod hack : restore ffi
+        // not working, use local io = require("cffi")
+        //luaL_findtable(L, LUA_REGISTRYINDEX, "_PRELOAD", 1);
+        //lua_pushcfunction(L, luaopen_ffi);
+        //lua_setfield(L, -2, "ffi");
+        //lua_pop(L, 1);
         
         return vm;
     }
