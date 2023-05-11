@@ -7,7 +7,3 @@ target_link_libraries(vscript PUBLIC lua5.1)
 
 add_library(luametahook SHARED luametahook.cpp)
 target_link_libraries(luametahook PUBLIC lua5.1)
-
-add_library(cio SHARED liolib.c)
-target_compile_definitions(cio PRIVATE -DLUA_BUILD_AS_DLL -DLUA_LIB)
-target_link_libraries(cio PUBLIC lua5.1)
